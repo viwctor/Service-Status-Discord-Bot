@@ -1,0 +1,34 @@
+name: Service Status
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check services
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+
+          MUSICO_BOT_ID: ${{ vars.MUSICO_BOT_ID }}
+          JOCKIE_BOT_ID: ${{ vars.JOCKIE_BOT_ID }}
+          FUTURE_BOT_ID: ${{ vars.FUTURE_BOT_ID }}
+
+          STATUS_MESSAGE_ID: ${{ vars.STATUS_MESSAGE_ID }}
+
+        run: npm start

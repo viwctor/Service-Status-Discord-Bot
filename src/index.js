@@ -417,29 +417,30 @@ async function checkWhatsApp() {
       : "unavailable",
   );
 
-if (
-  metaStatus ===
-    "operational" &&
-  webOnline
-) {
-  return "🟢";
-}
+  if (
+    metaStatus ===
+      "operational" &&
+    webOnline
+  ) {
+    return "🟢";
+  }
 
-if (
-  metaStatus ===
-    "unknown" &&
-  webOnline
-) {
-  return "🟢";
-}
+  if (
+    metaStatus ===
+      "unknown" &&
+    webOnline
+  ) {
+    return "🟢";
+  }
 
-if (
-  webOnline
-) {
-  return "🟡";
-}
+  if (
+    webOnline
+  ) {
+    return "🟡";
+  }
 
-return "🔴";
+  return "🔴";
+}
 
 /**
  * Service statuses.

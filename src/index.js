@@ -354,21 +354,115 @@ async function checkSteam() {
 }
 
 /**
+ * WhatsApp status.
+ *
+ * Uses Meta's official WhatsApp Business
+ * Platform status page plus WhatsApp Web
+ * as an additional availability signal.
+ */
+async function checkWhatsApp() {
+  let metaStatus =
+    "unknown";
+
+  try {
+    const response =
+      await fetch(
+        "https://metastatus.com/whatsapp-business-api",
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 Service-Status-Discord-Bot",
+          },
+        },
+      );
+
+    if (response.ok) {
+      const text =
+        (
+          await response.text()
+        ).toLowerCase();
+
+      if (
+        text.includes(
+          "the service is up and running with no known issues",
+        )
+      ) {
+        metaStatus =
+          "operational";
+      } else {
+        metaStatus =
+          "degraded";
+      }
+    }
+  } catch (error) {
+    console.warn(
+      "Meta WhatsApp status check failed:",
+      error.message,
+    );
+  }
+
+  const webOnline =
+    await checkHttp(
+      "https://web.whatsapp.com/",
+    );
+
+  console.log(
+    "WhatsApp Meta status:",
+    metaStatus,
+  );
+
+  console.log(
+    "WhatsApp Web:",
+    webOnline
+      ? "online"
+      : "unavailable",
+  );
+
+  if (
+    metaStatus ===
+      "operational" &&
+    webOnline
+  ) {
+    return "🟢";
+  }
+
+  if (
+    metaStatus ===
+      "degraded"
+  ) {
+    return "🟡";
+  }
+
+  if (
+    metaStatus ===
+      "unknown" &&
+    webOnline
+  ) {
+    return "🟡";
+  }
+
+  return "🔴";
+}
+
+/**
  * Service statuses.
  */
 async function getServiceStatuses() {
   const [
     cloudflare,
     steam,
+    whatsapp,
   ] =
     await Promise.all([
       checkCloudflare(),
       checkSteam(),
+      checkWhatsApp(),
     ]);
 
   return {
     cloudflare,
     steam,
+    whatsapp,
   };
 }
 
@@ -391,7 +485,7 @@ function buildStatusEmbed(
     "`🟡 Banco do Brasil`",
     "`🟡 Nubank`",
     "",
-    "`🟡 WhatsApp`",
+    `\`${serviceStatuses.whatsapp} WhatsApp\``,
     "",
     "BOTS:",
     `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.future} Futuro bot\``,
@@ -474,13 +568,13 @@ async function run() {
   );
 
   const [
-  botStatuses,
-  serviceStatuses,
-] =
-  await Promise.all([
-    getBotStatuses(),
-    getServiceStatuses(),
-  ]);
+    botStatuses,
+    serviceStatuses,
+  ] =
+    await Promise.all([
+      getBotStatuses(),
+      getServiceStatuses(),
+    ]);
 
   console.log(
     "Musico:",
@@ -497,25 +591,30 @@ async function run() {
     botStatuses.future,
   );
 
- const embed =
-  buildStatusEmbed(
-    botStatuses,
-    serviceStatuses,
+  console.log(
+    "Cloudflare:",
+    serviceStatuses.cloudflare,
   );
 
   console.log(
-  "Cloudflare:",
-  serviceStatuses.cloudflare,
-);
+    "Steam:",
+    serviceStatuses.steam,
+  );
 
   console.log(
-  "Steam:",
-  serviceStatuses.steam,
-);
+    "WhatsApp:",
+    serviceStatuses.whatsapp,
+  );
 
-await updateStatusMessage(
-  embed,
-);
+  const embed =
+    buildStatusEmbed(
+      botStatuses,
+      serviceStatuses,
+    );
+
+  await updateStatusMessage(
+    embed,
+  );
 
   console.log(
     "Status bot finished successfully.",

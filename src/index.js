@@ -218,23 +218,15 @@ async function checkHttp(
   url,
   timeoutMs = 8000,
 ) {
-  const controller =
-    new AbortController();
-
-  const timeout =
-    setTimeout(
-      () =>
-        controller.abort(),
-      timeoutMs,
-    );
-
   try {
     const response =
       await fetch(
         url,
         {
           signal:
-            controller.signal,
+            AbortSignal.timeout(
+              timeoutMs,
+            ),
 
           redirect:
             "follow",
@@ -249,10 +241,6 @@ async function checkHttp(
     );
 
     return false;
-  } finally {
-    clearTimeout(
-      timeout,
-    );
   }
 }
 
@@ -262,9 +250,15 @@ async function checkHttp(
 async function checkCloudflare() {
   try {
     const response =
-      await fetch(
-        "https://www.cloudflarestatus.com/api/v2/summary.json",
-      );
+  await fetch(
+    "https://www.cloudflarestatus.com/api/v2/summary.json",
+    {
+      signal:
+        AbortSignal.timeout(
+          8000,
+        ),
+    },
+  );
 
     if (!response.ok) {
       return "🟡";
@@ -366,15 +360,20 @@ async function checkWhatsApp() {
 
   try {
     const response =
-      await fetch(
-        "https://metastatus.com/whatsapp-business-api",
-        {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 Service-Status-Discord-Bot",
-          },
-        },
-      );
+  await fetch(
+    "https://metastatus.com/whatsapp-business-api",
+    {
+      signal:
+        AbortSignal.timeout(
+          8000,
+        ),
+
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 Service-Status-Discord-Bot",
+      },
+    },
+  );
 
     if (response.ok) {
       const text =

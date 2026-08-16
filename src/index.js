@@ -212,6 +212,167 @@ function getBrasiliaTime() {
 }
 
 /**
+ * Generic HTTP check with timeout.
+ */
+async function checkHttp(
+  url,
+  timeoutMs = 8000,
+) {
+  const controller =
+    new AbortController();
+
+  const timeout =
+    setTimeout(
+      () =>
+        controller.abort(),
+      timeoutMs,
+    );
+
+  try {
+    const response =
+      await fetch(
+        url,
+        {
+          signal:
+            controller.signal,
+
+          redirect:
+            "follow",
+        },
+      );
+
+    return response.ok;
+  } catch (error) {
+    console.warn(
+      `HTTP check failed for ${url}:`,
+      error.message,
+    );
+
+    return false;
+  } finally {
+    clearTimeout(
+      timeout,
+    );
+  }
+}
+
+/**
+ * Cloudflare official status.
+ */
+async function checkCloudflare() {
+  try {
+    const response =
+      await fetch(
+        "https://www.cloudflarestatus.com/api/v2/summary.json",
+      );
+
+    if (!response.ok) {
+      return "🟡";
+    }
+
+    const data =
+      await response.json();
+
+    const indicator =
+      data?.status?.indicator;
+
+    if (
+      indicator === "none"
+    ) {
+      return "🟢";
+    }
+
+    if (
+      indicator === "minor" ||
+      indicator === "maintenance"
+    ) {
+      return "🟡";
+    }
+
+    if (
+      indicator === "major" ||
+      indicator === "critical"
+    ) {
+      return "🔴";
+    }
+
+    return "🟡";
+  } catch (error) {
+    console.warn(
+      "Cloudflare status check failed:",
+      error.message,
+    );
+
+    return "🟡";
+  }
+}
+
+/**
+ * Steam status.
+ *
+ * We verify three independent Steam services:
+ * Store, Community and the official Web API.
+ */
+async function checkSteam() {
+  const checks =
+    await Promise.all([
+      checkHttp(
+        "https://store.steampowered.com/",
+      ),
+
+      checkHttp(
+        "https://steamcommunity.com/",
+      ),
+
+      checkHttp(
+        "https://api.steampowered.com/ISteamWebAPIUtil/GetServerInfo/v1/",
+      ),
+    ]);
+
+  const online =
+    checks.filter(
+      Boolean,
+    ).length;
+
+  console.log(
+    `Steam checks: ${online}/3 online`,
+  );
+
+  if (
+    online === 3
+  ) {
+    return "🟢";
+  }
+
+  if (
+    online === 2
+  ) {
+    return "🟡";
+  }
+
+  return "🔴";
+}
+
+/**
+ * Service statuses.
+ */
+async function getServiceStatuses() {
+  const [
+    cloudflare,
+    steam,
+  ] =
+    await Promise.all([
+      checkCloudflare(),
+      checkSteam(),
+    ]);
+
+  return {
+    cloudflare,
+    steam,
+  };
+}
+
+/**
  * Build the single status message.
  *
  * Service checks will be implemented
@@ -219,11 +380,12 @@ function getBrasiliaTime() {
  */
 function buildStatusEmbed(
   botStatuses,
+  serviceStatuses,
 ) {
   const description = [
     "Status dos serviços:",
-    "`🟡 Cloudflare`",
-    "`🟡 Steam`",
+    `\`${serviceStatuses.cloudflare} Cloudflare\``,
+    `\`${serviceStatuses.steam} Steam\``,
     "",
     "`🟡 Itaú`",
     "`🟡 Banco do Brasil`",
@@ -311,8 +473,14 @@ async function run() {
     "Checking Discord bot statuses...",
   );
 
-  const botStatuses =
-    await getBotStatuses();
+  const [
+  botStatuses,
+  serviceStatuses,
+] =
+  await Promise.all([
+    getBotStatuses(),
+    getServiceStatuses(),
+  ]);
 
   console.log(
     "Musico:",
@@ -332,7 +500,18 @@ async function run() {
  const embed =
   buildStatusEmbed(
     botStatuses,
+    serviceStatuses,
   );
+
+  console.log(
+  "Cloudflare:",
+  serviceStatuses.cloudflare,
+);
+
+  console.log(
+  "Steam:",
+  serviceStatuses.steam,
+);
 
 await updateStatusMessage(
   embed,

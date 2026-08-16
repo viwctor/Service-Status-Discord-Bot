@@ -489,6 +489,206 @@ async function checkWhatsApp() {
 }
 
 /**
+ * Convert Cumbuca's textual status
+ * into our Discord indicator.
+ */
+function parseBankStatus(
+  text,
+  bankNames,
+) {
+  const normalized =
+    text.toLowerCase();
+
+  for (
+    const bankName of bankNames
+  ) {
+    const name =
+      bankName.toLowerCase();
+
+    const index =
+      normalized.indexOf(
+        name,
+      );
+
+    if (index === -1) {
+      continue;
+    }
+
+    /**
+     * Look around the bank name because
+     * the exact formatting of the status
+     * page may change.
+     */
+    const start =
+      Math.max(
+        0,
+        index - 150,
+      );
+
+    const end =
+      Math.min(
+        normalized.length,
+        index + 350,
+      );
+
+    const section =
+      normalized.slice(
+        start,
+        end,
+      );
+
+    if (
+      section.includes(
+        "falha crítica",
+      ) ||
+      section.includes(
+        "critical failure",
+      ) ||
+      section.includes(
+        "critical",
+      )
+    ) {
+      return "🔴";
+    }
+
+    if (
+      section.includes(
+        "degradado",
+      ) ||
+      section.includes(
+        "degraded",
+      ) ||
+      section.includes(
+        "pouco tráfego",
+      ) ||
+      section.includes(
+        "low traffic",
+      )
+    ) {
+      return "🟡";
+    }
+
+    if (
+      section.includes(
+        "operacional",
+      ) ||
+      section.includes(
+        "operational",
+      )
+    ) {
+      return "🟢";
+    }
+  }
+
+  return "🟡";
+}
+
+/**
+ * Bank status using Cumbuca's public
+ * Open Finance monitoring.
+ */
+async function checkBanks() {
+  try {
+    const response =
+      await fetch(
+        "https://r.jina.ai/https://via.cumbuca.com/",
+        {
+          signal:
+            AbortSignal.timeout(
+              20000,
+            ),
+
+          headers: {
+            Accept:
+              "text/plain",
+          },
+        },
+      );
+
+    if (!response.ok) {
+      console.warn(
+        "Bank status source returned:",
+        response.status,
+      );
+
+      return {
+        itau: "🟡",
+        bancoDoBrasil: "🟡",
+        nubank: "🟡",
+      };
+    }
+
+    const text =
+      await response.text();
+
+    const itau =
+      parseBankStatus(
+        text,
+        [
+          "Itaú",
+          "Itau",
+        ],
+      );
+
+    const bancoDoBrasil =
+      parseBankStatus(
+        text,
+        [
+          "Banco do Brasil",
+        ],
+      );
+
+    const nubank =
+      parseBankStatus(
+        text,
+        [
+          "Nubank",
+        ],
+      );
+
+    console.log(
+      "Bank status source loaded.",
+    );
+
+    console.log(
+      "Itaú:",
+      itau,
+    );
+
+    console.log(
+      "Banco do Brasil:",
+      bancoDoBrasil,
+    );
+
+    console.log(
+      "Nubank:",
+      nubank,
+    );
+
+    return {
+      itau,
+      bancoDoBrasil,
+      nubank,
+    };
+  } catch (error) {
+    console.warn(
+      "Bank status check failed:",
+      error.message,
+    );
+
+    /**
+     * Source failure does NOT mean
+     * the banks themselves are offline.
+     */
+    return {
+      itau: "🟡",
+      bancoDoBrasil: "🟡",
+      nubank: "🟡",
+    };
+  }
+}
+
+/**
  * Service statuses.
  */
 async function getServiceStatuses() {
@@ -496,17 +696,28 @@ async function getServiceStatuses() {
     cloudflare,
     steam,
     whatsapp,
+    banks,
   ] =
     await Promise.all([
       checkCloudflare(),
       checkSteam(),
       checkWhatsApp(),
+      checkBanks(),
     ]);
 
   return {
     cloudflare,
     steam,
     whatsapp,
+
+    itau:
+      banks.itau,
+
+    bancoDoBrasil:
+      banks.bancoDoBrasil,
+
+    nubank:
+      banks.nubank,
   };
 }
 
@@ -521,23 +732,23 @@ function buildStatusEmbed(
   serviceStatuses,
 ) {
   const description = [
-    "Status dos serviços:",
-    `\`${serviceStatuses.cloudflare} Cloudflare\``,
-    `\`${serviceStatuses.steam} Steam\``,
-    "",
-    "`🟡 Itaú`",
-    "`🟡 Banco do Brasil`",
-    "`🟡 Nubank`",
-    "",
-    `\`${serviceStatuses.whatsapp} WhatsApp\``,
-    "",
-    "BOTS:",
-    `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.future} Futuro bot\``,
-    "",
-    `*Última verificação: ${getBrasiliaTime()}*`,
-  ].join(
-    "\n",
-  );
+  "Status dos serviços:",
+  `\`${serviceStatuses.cloudflare} Cloudflare\``,
+  `\`${serviceStatuses.steam} Steam\``,
+  "",
+  `\`${serviceStatuses.itau} Itaú\``,
+  `\`${serviceStatuses.bancoDoBrasil} Banco do Brasil\``,
+  `\`${serviceStatuses.nubank} Nubank\``,
+  "",
+  `\`${serviceStatuses.whatsapp} WhatsApp\``,
+  "",
+  "BOTS:",
+  `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.future} Futuro bot\``,
+  "",
+  `*Última verificação: ${getBrasiliaTime()}*`,
+].join(
+  "\n",
+);
 
   return new EmbedBuilder()
     .setColor(

@@ -220,29 +220,24 @@ function buildStatusMessage(
   botStatuses,
 ) {
   return [
-    "# STATUS DOS SERVIÇOS",
+    "Status dos serviços:",
+    "`🟡 Cloudflare`",
+    "`🟡 Steam`",
     "",
-    "### BOTS",
+    "`🟡 Itaú`",
+    "`🟡 Banco do Brasil`",
+    "`🟡 Nubank`",
     "",
-    `\`Musico ${botStatuses.musico}\``,
-    `\`Jockie ${botStatuses.jockie}\``,
-    `\`Futuro bot ${botStatuses.future}\``,
+    "`🟡 WhatsApp`",
     "",
-    "### SERVIÇOS",
-    "",
-    "`Cloudflare 🟡`",
-    "`WhatsApp 🟡`",
-    "`Steam 🟡`",
-    "`Nubank 🟡`",
-    "`Itaú 🟡`",
-    "`Banco do Brasil 🟡`",
+    "BOTS:",
+    `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.future} Futuro bot\``,
     "",
     `*Última verificação: ${getBrasiliaTime()}*`,
   ].join(
     "\n",
   );
 }
-
 /**
  * Create the message on first run,
  * or update the existing one.

@@ -1,7 +1,14 @@
 name: Service Status
 
 on:
+  schedule:
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+
   workflow_dispatch:
+
+concurrency:
+  group: service-status
+  cancel-in-progress: true
 
 jobs:
   status:

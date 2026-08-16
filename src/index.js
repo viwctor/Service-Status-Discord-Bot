@@ -250,15 +250,15 @@ async function checkHttp(
 async function checkCloudflare() {
   try {
     const response =
-  await fetch(
-    "https://www.cloudflarestatus.com/api/v2/summary.json",
-    {
-      signal:
-        AbortSignal.timeout(
-          8000,
-        ),
-    },
-  );
+      await fetch(
+        "https://www.cloudflarestatus.com/api/v2/summary.json",
+        {
+          signal:
+            AbortSignal.timeout(
+              8000,
+            ),
+        },
+      );
 
     if (!response.ok) {
       return "🟡";
@@ -267,30 +267,76 @@ async function checkCloudflare() {
     const data =
       await response.json();
 
-    const indicator =
-      data?.status?.indicator;
+    const components =
+      Array.isArray(
+        data.components,
+      )
+        ? data.components
+        : [];
+
+    /**
+     * Core Cloudflare services that matter
+     * for a general availability indicator.
+     */
+    const coreNames = [
+      "CDN/Cache",
+      "CDN Cache Purge",
+      "Load Balancing and Monitoring",
+      "Zones",
+      "SSL Certificate Provisioning",
+    ];
+
+    const coreComponents =
+      components.filter(
+        (component) =>
+          coreNames.includes(
+            component.name,
+          ),
+      );
+
+    console.log(
+      "Cloudflare core:",
+      coreComponents.map(
+        (component) =>
+          `${component.name}=${component.status}`,
+      ).join(", "),
+    );
 
     if (
-      indicator === "none"
-    ) {
-      return "🟢";
-    }
-
-    if (
-      indicator === "minor" ||
-      indicator === "maintenance"
+      coreComponents.length === 0
     ) {
       return "🟡";
     }
 
+    const statuses =
+      coreComponents.map(
+        (component) =>
+          component.status,
+      );
+
     if (
-      indicator === "major" ||
-      indicator === "critical"
+      statuses.some(
+        (status) =>
+          status ===
+            "major_outage",
+      )
     ) {
       return "🔴";
     }
 
-    return "🟡";
+    if (
+      statuses.some(
+        (status) =>
+          status ===
+            "partial_outage" ||
+          status ===
+            "degraded_performance"
+      )
+    ) {
+      return "🟡";
+    }
+
+    return "🟢";
   } catch (error) {
     console.warn(
       "Cloudflare status check failed:",

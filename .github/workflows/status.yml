@@ -1,9 +1,6 @@
 name: Service Status
 
 on:
-  schedule:
-    - cron: "3-58/5 * * * *"
-
   workflow_dispatch:
 
 concurrency:

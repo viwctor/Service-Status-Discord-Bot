@@ -3,6 +3,7 @@ import {
   GatewayIntentBits,
   REST,
   Routes,
+  EmbedBuilder,
 } from "discord.js";
 
 const DISCORD_TOKEN =
@@ -216,10 +217,10 @@ function getBrasiliaTime() {
  * Service checks will be implemented
  * after the Discord presence test.
  */
-function buildStatusMessage(
+function buildStatusEmbed(
   botStatuses,
 ) {
-  return [
+  const description = [
     "Status dos serviços:",
     "`🟡 Cloudflare`",
     "`🟡 Steam`",
@@ -237,13 +238,21 @@ function buildStatusMessage(
   ].join(
     "\n",
   );
+
+  return new EmbedBuilder()
+    .setColor(
+      0x45a366,
+    )
+    .setDescription(
+      description,
+    );
 }
 /**
  * Create the message on first run,
  * or update the existing one.
  */
 async function updateStatusMessage(
-  content,
+  embed,
 ) {
   if (
     STATUS_MESSAGE_ID
@@ -255,7 +264,10 @@ async function updateStatusMessage(
       ),
       {
         body: {
-          content,
+          content: null,
+          embeds: [
+            embed.toJSON(),
+          ],
         },
       },
     );
@@ -274,7 +286,9 @@ async function updateStatusMessage(
       ),
       {
         body: {
-          content,
+          embeds: [
+            embed.toJSON(),
+          ],
         },
       },
     );
@@ -315,14 +329,14 @@ async function run() {
     botStatuses.future,
   );
 
-  const content =
-    buildStatusMessage(
-      botStatuses,
-    );
-
-  await updateStatusMessage(
-    content,
+ const embed =
+  buildStatusEmbed(
+    botStatuses,
   );
+
+await updateStatusMessage(
+  embed,
+);
 
   console.log(
     "Status bot finished successfully.",

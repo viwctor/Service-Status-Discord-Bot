@@ -382,16 +382,16 @@ async function checkWhatsApp() {
         ).toLowerCase();
 
       if (
-        text.includes(
-          "the service is up and running with no known issues",
-        )
-      ) {
-        metaStatus =
-          "operational";
-      } else {
-        metaStatus =
-          "degraded";
-      }
+  text.includes(
+    "the service is up and running with no known issues",
+  )
+) {
+  metaStatus =
+    "operational";
+} else {
+  metaStatus =
+    "unknown";
+}
     }
   } catch (error) {
     console.warn(
@@ -417,31 +417,29 @@ async function checkWhatsApp() {
       : "unavailable",
   );
 
-  if (
-    metaStatus ===
-      "operational" &&
-    webOnline
-  ) {
-    return "🟢";
-  }
-
-  if (
-    metaStatus ===
-      "degraded"
-  ) {
-    return "🟡";
-  }
-
-  if (
-    metaStatus ===
-      "unknown" &&
-    webOnline
-  ) {
-    return "🟡";
-  }
-
-  return "🔴";
+if (
+  metaStatus ===
+    "operational" &&
+  webOnline
+) {
+  return "🟢";
 }
+
+if (
+  metaStatus ===
+    "unknown" &&
+  webOnline
+) {
+  return "🟢";
+}
+
+if (
+  webOnline
+) {
+  return "🟡";
+}
+
+return "🔴";
 
 /**
  * Service statuses.

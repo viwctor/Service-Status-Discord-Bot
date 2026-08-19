@@ -748,7 +748,7 @@ function buildStatusEmbed(
   `\`${serviceStatuses.whatsapp} WhatsApp\``,
   "",
   "BOTS:",
-  `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.megabrain} MegaBrain\``,
+  `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.megabrain} Megabrain\``,
   "",
   `*Última verificação: ${getBrasiliaTime()}*`,
 ].join(

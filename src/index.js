@@ -21,8 +21,8 @@ const MUSICO_BOT_ID =
 const JOCKIE_BOT_ID =
   process.env.JOCKIE_BOT_ID;
 
-const FUTURE_BOT_ID =
-  process.env.FUTURE_BOT_ID || "";
+const MEGABRAIN_BOT_ID =
+  "1538409424337637396";
 
 const STATUS_MESSAGE_ID =
   process.env.STATUS_MESSAGE_ID || "";
@@ -164,18 +164,23 @@ async function getBotStatuses() {
         JOCKIE_BOT_ID,
       );
 
-    const future =
-      FUTURE_BOT_ID
-        ? await getMemberStatus(
+    let megabrain =
+        await getMemberStatus(
             guild,
-            FUTURE_BOT_ID,
-          )
-        : "🟡";
+            MEGABRAIN_BOT_ID,
+        );
 
+    if (
+      megabrain !== "🟢"
+    ) {
+      megabrain =
+        "🔴";
+    }
+    
     return {
       musico,
       jockie,
-      future,
+      megabrain,
     };
   } finally {
     client.destroy();
@@ -743,7 +748,7 @@ function buildStatusEmbed(
   `\`${serviceStatuses.whatsapp} WhatsApp\``,
   "",
   "BOTS:",
-  `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.future} Futuro bot\``,
+  `\`${botStatuses.musico} Musico\`   \`${botStatuses.jockie} Jockie\`   \`${botStatuses.megabrain} MegaBrain\``,
   "",
   `*Última verificação: ${getBrasiliaTime()}*`,
 ].join(
@@ -842,8 +847,8 @@ async function run() {
   );
 
   console.log(
-    "Future bot:",
-    botStatuses.future,
+    "MegaBrain:",
+    botStatuses.megabrain,
   );
 
   console.log(
